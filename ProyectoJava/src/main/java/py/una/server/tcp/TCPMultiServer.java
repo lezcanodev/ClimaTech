@@ -15,9 +15,9 @@ public class TCPMultiServer {
         ServerSocket serverSocket = null;
 
         try {
-            serverSocket = new ServerSocket(4444);
+            serverSocket = new ServerSocket(5002);
         } catch (IOException e) {
-            System.err.println("No se puede abrir el puerto: 4444.");
+            System.err.println("No se puede abrir el puerto: 5002.");
             System.exit(1);
         }
         System.out.println("Puerto abierto: 4444.");
