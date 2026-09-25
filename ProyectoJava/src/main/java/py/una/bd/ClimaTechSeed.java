@@ -58,6 +58,32 @@ public class ClimaTechSeed {
                 stmt.executeBatch();
             }
 
+            String[] condicionesPronostico = { "Soleado", "Parcialmente nublado", "Nublado", "Tormentas aisladas",
+                    "Lluvia" };
+            String sqlPronostico = "INSERT INTO pronostico_diario (id_estacion, fecha, temp_maxima, temp_minima, condicion, probabilidad_lluvia) "
+                    + "VALUES (?, CURRENT_DATE + ? * INTERVAL '1 day', ?, ?, ?, ?) "
+                    + "ON CONFLICT (id_estacion, fecha) DO NOTHING";
+            try (PreparedStatement stmt = connection.prepareStatement(sqlPronostico)) {
+                for (Object[] e : estaciones) {
+                    String idEstacion = (String) e[0];
+                    for (int dia = 1; dia <= 7; dia++) {
+                        double tempMin = 15 + rnd.nextDouble() * 8;
+                        double tempMax = tempMin + 5 + rnd.nextDouble() * 10;
+                        String condicion = condicionesPronostico[rnd.nextInt(condicionesPronostico.length)];
+                        int probLluvia = rnd.nextInt(101);
+
+                        stmt.setString(1, idEstacion);
+                        stmt.setInt(2, dia);
+                        stmt.setDouble(3, tempMax);
+                        stmt.setDouble(4, tempMin);
+                        stmt.setString(5, condicion);
+                        stmt.setInt(6, probLluvia);
+                        stmt.addBatch();
+                    }
+                }
+                stmt.executeBatch();
+            }
+
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);

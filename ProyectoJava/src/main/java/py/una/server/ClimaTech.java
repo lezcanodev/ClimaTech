@@ -15,7 +15,7 @@ public class ClimaTech {
         new Thread(() -> {
             try {
                 TCPMultiServer tms = new TCPMultiServer();
-                tms.ejecutar();
+                tms.ejecutar(5002);
             } catch (Exception e) {
                 e.printStackTrace();
             }

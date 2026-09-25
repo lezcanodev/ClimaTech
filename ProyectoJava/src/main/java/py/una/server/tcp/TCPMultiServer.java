@@ -7,37 +7,31 @@ import java.io.*;
 
 public class TCPMultiServer {
 
-	//variables compartidas
-	boolean listening = true;
-	public List<TCPServerHilo> hilosClientes; //almacenar los hilos (no se utiliza en el ejemplo, se deja para que el alumno lo utilice)
+    // variables compartidas
+    boolean listening = true;
+    public List<TCPServerHilo> hilosClientes;
 
-    public void ejecutar() throws IOException {
+    public void ejecutar(int puerto) throws IOException {
         ServerSocket serverSocket = null;
 
+        if (hilosClientes == null) {
+            hilosClientes = new ArrayList<TCPServerHilo>();
+        }
+
         try {
-            serverSocket = new ServerSocket(5002);
+            serverSocket = new ServerSocket(puerto);
         } catch (IOException e) {
             System.err.println("No se puede abrir el puerto: 5002.");
             System.exit(1);
         }
-        System.out.println("Puerto abierto: 4444.");
+        System.out.println("Servidor ClimaTech TCP - Puerto abierto: 5002.");
 
         while (listening) {
-        	TCPServerHilo hilo = new TCPServerHilo(serverSocket.accept(), this);
+            TCPServerHilo hilo = new TCPServerHilo(serverSocket.accept(), this);
             hilosClientes.add(hilo);
             hilo.start();
         }
 
         serverSocket.close();
-    }
-    
-    public static void main(String[] args) throws IOException {
-    	
-    	TCPMultiServer tms = new TCPMultiServer();
-
-    	tms.hilosClientes = new ArrayList<TCPServerHilo>();
-
-    	tms.ejecutar();
-    	
     }
 }

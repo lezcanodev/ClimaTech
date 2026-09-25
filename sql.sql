@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS estaciones_meteorologicas (
     nombre          VARCHAR(100)
 );
 
-CREATE INDEX idx_ubicacion ON estaciones_meteorologicas (latitud, longitud);
+CREATE INDEX IF NOT EXISTS idx_ubicacion ON estaciones_meteorologicas (latitud, longitud);
 
 -------------------------------- 
 -- TABLA PARA GUARDAR LOS DATOS CLIMÁTICOS
@@ -28,4 +28,20 @@ CREATE TABLE IF NOT EXISTS mediciones_climaticas (
     probabilidad_lluvia SMALLINT
 );
 
-CREATE INDEX idx_estacion_fecha ON mediciones_climaticas (id_estacion, fecha_hora_medicion);
+CREATE INDEX IF NOT EXISTS idx_estacion_fecha ON mediciones_climaticas (id_estacion, fecha_hora_medicion);
+
+--------------------------------
+-- TABLA PARA PRONÓSTICO EXTENDIDO (servicio TCP)
+--------------------------------
+CREATE TABLE IF NOT EXISTS pronostico_diario (
+    id                  SERIAL PRIMARY KEY,
+    id_estacion         VARCHAR(20) NOT NULL REFERENCES estaciones_meteorologicas(id_estacion),
+    fecha               DATE NOT NULL,
+    temp_maxima         DECIMAL(5,2) NOT NULL,
+    temp_minima         DECIMAL(5,2) NOT NULL,
+    condicion           VARCHAR(80),
+    probabilidad_lluvia SMALLINT,
+    UNIQUE (id_estacion, fecha)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pronostico_estacion_fecha ON pronostico_diario (id_estacion, fecha);

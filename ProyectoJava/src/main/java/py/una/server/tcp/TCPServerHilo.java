@@ -6,13 +6,19 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import py.una.server.controladores.PronosticoExtendidoController;
+
 public class TCPServerHilo extends Thread {
 
     private Socket socket = null;
 
     TCPMultiServer servidor;
-    
-    public TCPServerHilo(Socket socket, TCPMultiServer servidor ) {
+
+    public TCPServerHilo(Socket socket, TCPMultiServer servidor) {
         super("TCPServerHilo");
         this.socket = socket;
         this.servidor = servidor;
@@ -22,44 +28,41 @@ public class TCPServerHilo extends Thread {
 
         try {
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(
-                    socket.getInputStream()));
-            out.println("Bienvenido!");
-            String inputLine, outputLine;
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            while ((inputLine = in.readLine()) != null) {
-                System.out.println("Mensaje recibido: " + inputLine);
-
-                
-                //to-do: utilizar json
-                if (inputLine.equals("Bye")) {
-                    outputLine = "Usted apago el hilo";
-                    break;
-                    
-                }else if (inputLine.equals("Terminar todo")) {
-                    servidor.listening = false;
-                    outputLine = "Usted apago todo";
-                    break;
-                    
-                }else if (inputLine.split(":").length > 1) {
-                	String usuario = inputLine.split(":")[1]; 
-                	outputLine = "Usuario/a "+usuario+"agregado";
-                }else if (inputLine.equals("Listar usuarios")) {
-                	outputLine = "Lista de usuarios: " ;
-                }else {
-                	outputLine = "No introdujo orden a ejecutar." ;
-                }
-                
-                out.println(outputLine);
+            String jsonRecibido = in.readLine();
+            if (jsonRecibido != null) {
+                String jsonRespuesta = procesarServicio(jsonRecibido);
+                out.println(jsonRespuesta);
             }
+
             out.close();
             in.close();
             socket.close();
-            System.out.println("Finalizando Hilo");
 
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private String procesarServicio(String jsonRecibido) {
+        try {
+            JSONParser parser = new JSONParser();
+            JSONObject solicitud = (JSONObject) parser.parse(jsonRecibido);
+            String servicio = (String) solicitud.get("servicio");
+
+            if ("pronostico_extendido".equals(servicio)) {
+                PronosticoExtendidoController controller = new PronosticoExtendidoController();
+                return controller.manejarSolicitud(solicitud);
+            }
+
+            JSONObject error = new JSONObject();
+            error.put("error", "Servicio no reconocido");
+            return error.toJSONString();
+        } catch (ParseException e) {
+            JSONObject error = new JSONObject();
+            error.put("error", "JSON de solicitud inválido");
+            return error.toJSONString();
         }
     }
 }

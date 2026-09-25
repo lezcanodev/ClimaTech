@@ -5,7 +5,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import py.una.entidad.Medicion;
+import py.una.entidad.PronosticoDia;
+import py.una.entidad.PronosticoExtendido;
 
 public class ClimaTechDAO {
 
@@ -41,6 +46,64 @@ public class ClimaTechDAO {
                 }
                 return null;
             }
+        }
+    }
+
+    public PronosticoExtendido obtenerPronosticoExtendido(Double latitud, Double longitud, int dias)
+            throws SQLException {
+        String sqlEstacion = "SELECT id_estacion, nombre FROM estaciones_meteorologicas "
+                + "ORDER BY (latitud - ?) * (latitud - ?) + (longitud - ?) * (longitud - ?) "
+                + "LIMIT 1";
+
+        String sqlPronostico = "SELECT fecha, temp_maxima, temp_minima, condicion, probabilidad_lluvia "
+                + "FROM pronostico_diario "
+                + "WHERE id_estacion = ? AND fecha >= CURRENT_DATE "
+                + "ORDER BY fecha ASC "
+                + "LIMIT ?";
+
+        try (Connection conn = Bd.connect()) {
+            String idEstacion = null;
+            String nombreEstacion = null;
+
+            try (PreparedStatement stmtEst = conn.prepareStatement(sqlEstacion)) {
+                stmtEst.setDouble(1, latitud);
+                stmtEst.setDouble(2, latitud);
+                stmtEst.setDouble(3, longitud);
+                stmtEst.setDouble(4, longitud);
+                try (ResultSet rs = stmtEst.executeQuery()) {
+                    if (!rs.next()) {
+                        return null;
+                    }
+                    idEstacion = rs.getString("id_estacion");
+                    nombreEstacion = rs.getString("nombre");
+                }
+            }
+
+            List<PronosticoDia> diasPronostico = new ArrayList<>();
+            try (PreparedStatement stmt = conn.prepareStatement(sqlPronostico)) {
+                stmt.setString(1, idEstacion);
+                stmt.setInt(2, dias);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        PronosticoDia dia = new PronosticoDia();
+                        dia.setFecha(rs.getDate("fecha").toString());
+                        dia.setTempMaxima(rs.getDouble("temp_maxima"));
+                        dia.setTempMinima(rs.getDouble("temp_minima"));
+                        dia.setCondicion(rs.getString("condicion"));
+                        dia.setProbabilidadLluvia(rs.getInt("probabilidad_lluvia"));
+                        diasPronostico.add(dia);
+                    }
+                }
+            }
+
+            if (diasPronostico.isEmpty()) {
+                return null;
+            }
+
+            PronosticoExtendido resultado = new PronosticoExtendido();
+            resultado.setUbicacion(nombreEstacion);
+            resultado.setPronostico(diasPronostico);
+            return resultado;
         }
     }
 
