@@ -108,6 +108,14 @@ public class ClimaTechDAO {
         }
     }
 
+    public void resetSubscripciones() throws SQLException {
+        String sql = "DELETE FROM suscripciones_alertas";
+        try (Connection conn = Bd.connect();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.executeUpdate();
+        }
+    }
+
     public SuscripcionAlerta registrarSuscripcion(String sistemaSuscriptor, Double latitud, Double longitud,
             int radioKm, String tiposAlertaJson, String urlCallback) throws SQLException {
         String idSuscripcion = "SUB-" + (System.currentTimeMillis() % 100000);

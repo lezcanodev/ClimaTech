@@ -11,6 +11,9 @@ public class ClimaTechSeed {
 
     public static void generarDatos() {
         try {
+            ClimaTechDAO climaTechDAO = new ClimaTechDAO();
+            climaTechDAO.resetSubscripciones();
+
             Connection connection = Bd.connect();
             Random rnd = new Random();
 
