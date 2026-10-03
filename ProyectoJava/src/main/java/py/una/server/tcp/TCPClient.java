@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 
 import org.json.simple.JSONObject;
 
+// Para probar pronostico extendido
 public class TCPClient {
 
     public static void main(String[] args) throws Exception {

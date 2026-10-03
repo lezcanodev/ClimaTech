@@ -5,6 +5,7 @@ import java.net.*;
 
 import org.json.simple.JSONObject;
 
+// Para probar consulta de clima
 class UDPClient {
 
     public static void main(String a[]) throws Exception {
