@@ -11,6 +11,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import py.una.server.controladores.PronosticoExtendidoController;
+import py.una.server.controladores.SuscripcionAlertasController;
 
 public class TCPServerHilo extends Thread {
 
@@ -53,6 +54,11 @@ public class TCPServerHilo extends Thread {
 
             if ("pronostico_extendido".equals(servicio)) {
                 PronosticoExtendidoController controller = new PronosticoExtendidoController();
+                return controller.manejarSolicitud(solicitud);
+            }
+
+            if ("suscripcion_alertas".equals(servicio)) {
+                SuscripcionAlertasController controller = new SuscripcionAlertasController();
                 return controller.manejarSolicitud(solicitud);
             }
 

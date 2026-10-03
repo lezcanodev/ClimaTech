@@ -11,6 +11,7 @@ import java.util.List;
 import py.una.entidad.Medicion;
 import py.una.entidad.PronosticoDia;
 import py.una.entidad.PronosticoExtendido;
+import py.una.entidad.SuscripcionAlerta;
 
 public class ClimaTechDAO {
 
@@ -104,6 +105,93 @@ public class ClimaTechDAO {
             resultado.setUbicacion(nombreEstacion);
             resultado.setPronostico(diasPronostico);
             return resultado;
+        }
+    }
+
+    public SuscripcionAlerta registrarSuscripcion(String sistemaSuscriptor, Double latitud, Double longitud,
+            int radioKm, String tiposAlertaJson, String urlCallback) throws SQLException {
+        String idSuscripcion = "SUB-" + (System.currentTimeMillis() % 100000);
+
+        String sql = "INSERT INTO suscripciones_alertas (id_suscripcion, sistema_suscriptor, latitud, longitud, "
+                + "radio_km, tipos_alerta, url_callback, estado, fecha_registro) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, 'activa', NOW()) "
+                + "RETURNING id_suscripcion, estado, fecha_registro";
+
+        try (Connection conn = Bd.connect();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, idSuscripcion);
+            stmt.setString(2, sistemaSuscriptor);
+            stmt.setDouble(3, latitud);
+            stmt.setDouble(4, longitud);
+            stmt.setInt(5, radioKm);
+            stmt.setString(6, tiposAlertaJson);
+            stmt.setString(7, urlCallback);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    SuscripcionAlerta suscripcion = new SuscripcionAlerta();
+                    suscripcion.setIdSuscripcion(rs.getString("id_suscripcion"));
+                    suscripcion.setEstado(rs.getString("estado"));
+                    suscripcion.setFechaRegistro(rs.getTimestamp("fecha_registro").toString());
+                    return suscripcion;
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<SuscripcionAlerta> listarSuscripcionesActivas() throws SQLException {
+        String sql = "SELECT id_suscripcion, sistema_suscriptor, latitud, longitud, radio_km, tipos_alerta, "
+                + "url_callback, estado, fecha_registro "
+                + "FROM suscripciones_alertas WHERE estado = 'activa'";
+
+        List<SuscripcionAlerta> lista = new ArrayList<>();
+        try (Connection conn = Bd.connect();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                SuscripcionAlerta s = new SuscripcionAlerta();
+                s.setIdSuscripcion(rs.getString("id_suscripcion"));
+                s.setSistemaSuscriptor(rs.getString("sistema_suscriptor"));
+                s.setLatitud(rs.getDouble("latitud"));
+                s.setLongitud(rs.getDouble("longitud"));
+                s.setRadioKm(rs.getInt("radio_km"));
+                s.setTiposAlertaJson(rs.getString("tipos_alerta"));
+                s.setUrlCallback(rs.getString("url_callback"));
+                s.setEstado(rs.getString("estado"));
+                s.setFechaRegistro(rs.getTimestamp("fecha_registro").toString());
+                lista.add(s);
+            }
+        }
+        return lista;
+    }
+
+    public double[] obtenerCoordenadasEstacion(String idEstacion) throws SQLException {
+        String sql = "SELECT latitud, longitud FROM estaciones_meteorologicas WHERE id_estacion = ?";
+        try (Connection conn = Bd.connect();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, idEstacion);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new double[] { rs.getDouble("latitud"), rs.getDouble("longitud") };
+                }
+            }
+        }
+        return null;
+    }
+
+    public void guardarMedicion(String idEstacion, Double temperatura, String condicion, int probabilidadLluvia)
+            throws SQLException {
+        String sql = "INSERT INTO mediciones_climaticas (id_estacion, fecha_hora_medicion, temperatura, "
+                + "sensacion_termica, condicion, probabilidad_lluvia) VALUES (?, NOW(), ?, ?, ?, ?)";
+        try (Connection conn = Bd.connect();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, idEstacion);
+            stmt.setDouble(2, temperatura);
+            stmt.setDouble(3, temperatura);
+            stmt.setString(4, condicion);
+            stmt.setInt(5, probabilidadLluvia);
+            stmt.executeUpdate();
         }
     }
 

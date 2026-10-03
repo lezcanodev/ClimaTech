@@ -1,22 +1,17 @@
 package py.una.server.tcp;
 
-import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.io.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TCPMultiServer {
 
     // variables compartidas
     boolean listening = true;
-    public List<TCPServerHilo> hilosClientes;
 
     public void ejecutar(int puerto) throws IOException {
         ServerSocket serverSocket = null;
-
-        if (hilosClientes == null) {
-            hilosClientes = new ArrayList<TCPServerHilo>();
-        }
 
         try {
             serverSocket = new ServerSocket(puerto);
@@ -26,10 +21,10 @@ public class TCPMultiServer {
         }
         System.out.println("Servidor ClimaTech TCP - Puerto abierto: 5002.");
 
+        ExecutorService pool = Executors.newFixedThreadPool(10);
+
         while (listening) {
-            TCPServerHilo hilo = new TCPServerHilo(serverSocket.accept(), this);
-            hilosClientes.add(hilo);
-            hilo.start();
+            pool.submit(new TCPServerHilo(serverSocket.accept(), this));
         }
 
         serverSocket.close();
