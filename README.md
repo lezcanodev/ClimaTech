@@ -1,74 +1,54 @@
+# ClimaTech
 
-# Descargar el código fuente
+## Requisitos
 
-  - Ubicación del proyecto: https://gitlab.com/fmancia/sd/tree/master/lab-socket/ProyectoJava
+- JDK 8, Maven, PostgreSQL
+- Crear BD `climatech`, ejecutar `sql.sql`
+- Ajustar `ProyectoJava/src/main/java/py/una/bd/Bd.java` (url, user, password)
 
-  - Clonar Proyecto
-      `git clone git@gitlab.com:fmancia/sd.git`
- ó bien
-      `git clone https://gitlab.com/fmancia/sd.git`
+## Descargar
 
-  - Verificar que el directorio dentro de su disco: /lab-socket/ProyectoJava  (En ese directorio se encuentra la práctica de sockets tcp/upd)
+```bash
+git clone <url-del-repositorio>
+cd climaTech/ProyectoJava
+```
 
+## Servidor (todos los servicios)
 
-# Instalar software base
+Un solo proceso: TCP `:5002`, UDP clima `:5001`, receptor mediciones `:5003`, simulador de estación cada 5 s.
 
-  - 1. Instalar servidor de base de datos PostgreSQL: https://www.postgresql.org/
+```bash
+mvn -q compile exec:java -Dexec.mainClass=py.una.server.ClimaTech
+```
 
-  - 2. Instalar el JDK de Java (para esta práctica es JDK1.8 o JDK8). https://www.oracle.com/java/technologies/downloads/#java8
-  
-    - 2.1. Asegurarse que este configurado la variable de entorno PATH con la carpeta "bin" correspondiente al JDK (no al JRE).
+## Probar clientes (otra consola, misma carpeta `ProyectoJava`)
 
-    - 2.2. Asegurarse que este configurado la variable de entorno JAVA_HOME apuntando a la carpeta de JDK sin incluir la subcarpeta "bin". Ej: 
+Comando base:
 
+```bash
+mvn -q compile exec:java -Dexec.mainClass=<clase>
+```
 
-  - 3. Instalar Maven: https://maven.apache.org/install.html 
+| Servicio | Protocolo | Clase | Datos de ejemplo |
+|----------|-----------|--------|------------------|
+| Clima actual | UDP 5001 | `py.una.server.udp.UDPClient` | lat `-25.2637`, lon `-57.5759` |
+| Pronóstico extendido | TCP 5002 | `py.una.server.tcp.TCPClient` | lat/lon Asunción, días `5` |
+| Alertas (suscripción + callback TCP) | TCP 5002 | `py.una.server.tcp.ClienteFlujoAlertasTCP` | puerto callback `9100`, lat/lon, radio `10` (entero, 1–32767) |
 
-    - 3.1. Asegurarse que este configurado la variable de entorno PATH con la carpeta correspondiente a maven.
+**Ejemplos**
 
-  - 4. Instalar un IDE, Ejemplo: Visual Studio Code, Eclipse, etc
+```bash
+mvn -q compile exec:java -Dexec.mainClass=py.una.server.udp.UDPClient
+```
 
+```bash
+mvn -q compile exec:java -Dexec.mainClass=py.una.server.tcp.TCPClient
+```
 
-# Base de datos
+```bash
+mvn -q compile exec:java -Dexec.mainClass=py.una.server.tcp.ClienteFlujoAlertasTCP
+```
 
-  - Deberá crear una base de datos Postgresql con llamada “sd”
-  - Deberá crear estructura cuyo script de creación está en el repositorio en el
-directorio: “BaseDatos”.
-  - Deberá configurar en la clase py.una.bd.Bd.java lo siguiente:
-      - IP, puerto y nombre de la BD (variable url)
-      - Usuario y Password del postgresql (variables user y password)
+Solo suscripción (callback HTTP aparte): `py.una.server.tcp.SuscripcionAlertasTCPClient`
 
-
-# UDP, Protocolo de Datagramas de Usuario (datagramas)
-◦ Servidor UDP
-▪ Ejecutar Clase servidor py.una.server.udp.UDPServer (Puede ejecutar en una
-consola aparte o desde el IDE)
-▪ Solo puede ejecutar uno a la vez.
-▪ Intente ejecutar y se generará un error similar a java.net.BindException:
-Address already in use: Cannot bind
-◦ Cliente UDP
-▪ Ejecutar Clase servidor py.una.server.udp.UDPClient (Puede ejecutar en una
-consola aparte o desde el IDE)
-▪ Puede Ejecutar varios clientes en simultáneo.
-
-# TCP, Protocolo de Control de Transmisión (flujo)
-◦ Servidor TCP, Una petición de un solo cliente.
-◦ Servidor TCP, Varias peticiones de un solo cliente.
-◦ Servidor TCP, Varias peticiones de varios clientes (Multi-hilo)
-
-
-# Verificación con comando netstat:
- - Windows:
-
-`netstat -a -b -p udp` 
-
-`netstat -a -b -p tcp`
- - Unix/Linux:
-
-`netstat -upnl`
-
-`netstat -tpnl`
-
-
-
-Fuente: https://grado.pol.una.py/pluginfile.php/286807/mod_resource/content/1/LAB-01_SOCKETS.pdf
+Medición manual a receptor (opcional; ClimaTech ya simula): `py.una.server.udp.SimuladorEstacionUDP`
